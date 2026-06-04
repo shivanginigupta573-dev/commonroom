@@ -1,20 +1,35 @@
 "use client";
 
-import { useState } from "react";
-
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import CategoryGrid from "@/components/CategoryGrid";
 import ListingCard from "@/components/ListingCard";
-
-import { listings } from "@/data/mockListings";
+import { listings as mockListings } from "@/data/mockListings";
 
 export default function Home() {
   const [search, setSearch] = useState("");
-  const [selectedCategory, setSelectedCategory] =
-    useState("All");
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [allListings, setAllListings] = useState(mockListings);
 
-  const filteredListings = listings.filter((item) => {
+  useEffect(() => {
+    const savedListings = JSON.parse(
+      localStorage.getItem("listings") || "[]"
+    );
+
+    // Merge mock + localStorage, avoiding duplicates by id
+    const mergedListings = [
+      ...mockListings,
+      ...savedListings.filter(
+        (saved: { id: number }) =>
+          !mockListings.some((mock) => mock.id === saved.id)
+      ),
+    ];
+
+    setAllListings(mergedListings);
+  }, []);
+
+  const filteredListings = allListings.filter((item) => {
     const matchesSearch = item.title
       .toLowerCase()
       .includes(search.toLowerCase());
@@ -29,42 +44,28 @@ export default function Home() {
   return (
     <main>
       <Navbar />
-
-      <Hero
-        search={search}
-        setSearch={setSearch}
-      />
+      <Hero search={search} setSearch={setSearch} />
 
       <section className="max-w-7xl mx-auto px-8 py-10">
-
-        {/* Category Filters */}
         <div className="flex gap-3 mb-8 flex-wrap">
-          {[
-            "All",
-            "Books",
-            "Hostel Essentials",
-            "Cycles",
-            "Study Material",
-          ].map((category) => (
-            <button
-              key={category}
-              onClick={() =>
-                setSelectedCategory(category)
-              }
-              className={`px-4 py-2 rounded-full border transition ${
-                selectedCategory === category
-                  ? "bg-indigo-600 text-white shadow-md"
-                  : "bg-white hover:bg-gray-50"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
+          {["All", "Books", "Hostel Essentials", "Cycles", "Study Material"].map(
+            (category) => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                className={`px-4 py-2 rounded-full border transition ${
+                  selectedCategory === category
+                    ? "bg-indigo-600 text-white shadow-md"
+                    : "bg-white hover:bg-gray-50"
+                }`}
+              >
+                {category}
+              </button>
+            )
+          )}
         </div>
 
-        <h2 className="text-2xl font-bold mb-6">
-          Trending Listings
-        </h2>
+        <h2 className="text-2xl font-bold mb-6">Trending Listings</h2>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredListings.map((item) => (
@@ -84,9 +85,7 @@ export default function Home() {
 
         {filteredListings.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">
-              No listings found.
-            </p>
+            <p className="text-gray-500 text-lg">No listings found.</p>
           </div>
         )}
       </section>
