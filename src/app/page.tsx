@@ -3,30 +3,41 @@
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import CategoryGrid from "@/components/CategoryGrid";
 import ListingCard from "@/components/ListingCard";
-import { listings as mockListings } from "@/data/mockListings";
+import api, { getImageUrl } from "@/lib/api";
+
+type Listing = {
+  id: number;
+  title: string;
+  price: string;
+  image: string | null;
+  seller: string;
+  program: string;
+  year: string;
+  campus: string;
+  category: string;
+  listing_type: string;
+  status: string;
+};
 
 export default function Home() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [allListings, setAllListings] = useState(mockListings);
+  const [allListings, setAllListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const savedListings = JSON.parse(
-      localStorage.getItem("listings") || "[]"
-    );
-
-    // Merge mock + localStorage, avoiding duplicates by id
-    const mergedListings = [
-      ...mockListings,
-      ...savedListings.filter(
-        (saved: { id: number }) =>
-          !mockListings.some((mock) => mock.id === saved.id)
-      ),
-    ];
-
-    setAllListings(mergedListings);
+    api.get('/listings/')
+      .then((response) => {
+        setAllListings(response.data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setError("Failed to load listings. Is the backend running?");
+        setLoading(false);
+      });
   }, []);
 
   const filteredListings = allListings.filter((item) => {
@@ -65,25 +76,40 @@ export default function Home() {
           )}
         </div>
 
-        <h2 className="text-2xl font-bold mb-6">Trending Listings</h2>
+        <h2 className="text-2xl font-bold mb-6">Listings</h2>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredListings.map((item) => (
-            <ListingCard
-              key={item.id}
-              id={item.id}
-              title={item.title}
-              price={item.price}
-              campus={item.campus}
-              seller={item.seller}
-              program={item.program}
-              year={item.year}
-              image={item.image}
-            />
-          ))}
-        </div>
+        {loading && (
+          <div className="text-center py-12">
+            <p className="text-gray-400">Loading listings...</p>
+          </div>
+        )}
 
-        {filteredListings.length === 0 && (
+        {error && (
+          <div className="text-center py-12">
+            <p className="text-red-500">{error}</p>
+          </div>
+        )}
+
+        {!loading && !error && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredListings.map((item) => (
+              <ListingCard
+                key={item.id}
+                id={item.id}
+                title={item.title}
+                price={Number(item.price)}
+                campus={item.campus}
+                seller={item.seller}
+                program={item.program}
+                year={item.year}
+                // inside the map:
+                image={getImageUrl(item.image)}
+              />
+            ))}
+          </div>
+        )}
+
+        {!loading && !error && filteredListings.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No listings found.</p>
           </div>
