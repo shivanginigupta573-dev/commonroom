@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import api, { getImageUrl } from "@/lib/api";
 
 type Listing = {
@@ -23,11 +23,14 @@ type Listing = {
 
 export default function ListingPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id;
 
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     api.get(`/listings/${id}/`)
@@ -41,6 +44,18 @@ export default function ListingPage() {
         setLoading(false);
       });
   }, [id]);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await api.delete(`/listings/${id}/`);
+      router.push("/");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete listing");
+      setDeleting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -95,9 +110,43 @@ export default function ListingPage() {
         </p>
       </div>
 
-      <button className="mt-8 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition w-full">
-        Contact Seller
-      </button>
+      <div className="mt-8 flex gap-3">
+        <button className="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition">
+          Contact Seller
+        </button>
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="bg-red-100 text-red-600 px-6 py-3 rounded-lg hover:bg-red-200 transition"
+        >
+          Delete
+        </button>
+      </div>
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm mx-4">
+            <h2 className="text-xl font-bold mb-4">Delete Listing?</h2>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete this listing? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 rounded-lg border hover:bg-gray-50 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition"
+              >
+                {deleting ? "Deleting..." : "Delete Listing"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

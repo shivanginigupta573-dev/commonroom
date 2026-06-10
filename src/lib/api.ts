@@ -6,8 +6,14 @@ const api = axios.create({
 
 export const getImageUrl = (imagePath: string | null) => {
   if (!imagePath) return "https://placehold.co/400x300?text=No+Image";
+  // If it's already a full URL, return as is
   if (imagePath.startsWith('http')) return imagePath;
-  const cleanPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
-  return `http://127.0.0.1:8000/media/${cleanPath}`;
+  // If it starts with /media/, prepend the base URL
+  if (imagePath.startsWith('/media/')) {
+    return `http://127.0.0.1:8000${imagePath}`;
+  }
+  // If it's a relative path like 'listings/image.jpg', add /media/ prefix
+  return `http://127.0.0.1:8000/media/${imagePath}`;
 };
+
 export default api;
