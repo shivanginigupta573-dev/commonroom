@@ -1,28 +1,38 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Navbar from "@/components/Navbar";
-import api from "@/lib/api";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import Navbar from '@/components/Navbar';
+import api from '@/lib/api';
 
 export default function CreateListing() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [image, setImage] = useState<File | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      router.push('/auth/login');
+    } else {
+      setIsAuthenticated(true);
+    }
+  }, [router]);
 
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    price: "",
-    category: "Books",
-    listing_type: "sell",
-    condition: "good",
-    program: "BTech",
-    year: "1",
-    seller: "",
-    campus: "NIT Durgapur",
+    title: '',
+    description: '',
+    price: '',
+    category: 'Books',
+    listing_type: 'sell',
+    condition: 'good',
+    program: 'BTech',
+    year: '1',
+    seller: '',
+    campus: 'NIT Durgapur',
     is_negotiable: true,
   });
 
@@ -30,7 +40,7 @@ export default function CreateListing() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value, type } = e.target;
-    if (type === "checkbox") {
+    if (type === 'checkbox') {
       setFormData({
         ...formData,
         [name]: (e.target as HTMLInputElement).checked,
@@ -49,39 +59,43 @@ export default function CreateListing() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
+    setError('');
     setSuccess(false);
 
     try {
       const data = new FormData();
-      data.append("title", formData.title);
-      data.append("description", formData.description);
-      data.append("price", formData.price);
-      data.append("category", formData.category);
-      data.append("listing_type", formData.listing_type);
-      data.append("condition", formData.condition);
-      data.append("program", formData.program);
-      data.append("year", formData.year);
-      data.append("seller", formData.seller);
-      data.append("campus", formData.campus);
-      data.append("is_negotiable", String(formData.is_negotiable));
+      data.append('title', formData.title);
+      data.append('description', formData.description);
+      data.append('price', formData.price);
+      data.append('category', formData.category);
+      data.append('listing_type', formData.listing_type);
+      data.append('condition', formData.condition);
+      data.append('program', formData.program);
+      data.append('year', formData.year);
+      data.append('seller', formData.seller);
+      data.append('campus', formData.campus);
+      data.append('is_negotiable', String(formData.is_negotiable));
       if (image) {
-        data.append("image", image);
+        data.append('image', image);
       }
 
-      const response = await api.post("/listings/", data);
+      const response = await api.post('/listings/', data);
 
       setSuccess(true);
       setTimeout(() => {
-        router.push("/");
+        router.push('/');
       }, 1500);
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.message || "Failed to create listing. Please try again.");
+      setError(err.response?.data?.message || 'Failed to create listing. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <main>
@@ -269,7 +283,7 @@ export default function CreateListing() {
             disabled={loading}
             className="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
-            {loading ? "Creating..." : "Post Item"}
+            {loading ? 'Creating...' : 'Post Item'}
           </button>
         </form>
       </section>

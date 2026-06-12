@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class Listing(models.Model):
     CATEGORY_CHOICES = [
@@ -41,6 +42,7 @@ class Listing(models.Model):
     image = models.ImageField(upload_to='listings/', blank=True, null=True)
     is_negotiable = models.BooleanField(default=True)
     status = models.CharField(max_length=20, default='active')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='listings', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
