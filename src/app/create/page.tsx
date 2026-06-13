@@ -19,6 +19,21 @@ export default function CreateListing() {
       router.push('/auth/login');
     } else {
       setIsAuthenticated(true);
+      // Auto-populate seller name from user data stored during login
+      const userData = localStorage.getItem('user');
+      if (userData) {
+        try {
+          const user = JSON.parse(userData);
+          setFormData(prev => ({
+            ...prev,
+            seller: user.first_name && user.last_name 
+              ? `${user.first_name} ${user.last_name}` 
+              : user.username
+          }));
+        } catch (e) {
+          console.error('Failed to parse user data:', e);
+        }
+      }
     }
   }, [router]);
 
@@ -30,7 +45,7 @@ export default function CreateListing() {
     listing_type: 'sell',
     condition: 'good',
     program: 'BTech',
-    year: '1',
+   year: '1st Year',
     seller: '',
     campus: 'NIT Durgapur',
     is_negotiable: true,
@@ -220,15 +235,17 @@ export default function CreateListing() {
 
             <div>
               <label className="block text-sm font-medium mb-2">Year *</label>
-              <input
-                type="text"
+              <select
                 name="year"
                 value={formData.year}
                 onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                placeholder="1"
-              />
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600">
+                <option value="1st Year">1st Year</option>
+                <option value="2nd Year">2nd Year</option>
+                <option value="3rd Year">3rd Year</option>
+                <option value="4th Year">4th Year</option>
+                <option value="5th Year">5th Year</option>
+              </select> 
             </div>
 
             <div>
@@ -237,10 +254,9 @@ export default function CreateListing() {
                 type="text"
                 name="seller"
                 value={formData.seller}
-                onChange={handleInputChange}
-                required
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                placeholder="Your name"
+                readOnly
+                className="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+                placeholder="Auto-populated from account"
               />
             </div>
           </div>
