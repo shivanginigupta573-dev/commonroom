@@ -17,7 +17,8 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATIC_URL = '/static/'
 
-# CORS for production — will add Vercel URL after frontend deploys
+# CORS for production
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "https://commonroom-five.vercel.app/",
 ]
