@@ -20,5 +20,5 @@ STATIC_URL = '/static/'
 # CORS for production
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    "https://commonroom-five.vercel.app/",
+    "https://commonroom-five.vercel.app",
 ]
