@@ -4,9 +4,8 @@
 
 **Live Demo:** [commonroom-five.vercel.app](https://commonroom-five.vercel.app)
 
-![CommonRoom Homepage](screenshots\Screenshot 2026-06-22 095900.png)
-
-![CommonRoom Homepage](screenshots\Screenshot 2026-06-22 095927.png)
+![CommonRoom Homepage](screenshots/homepage.png)
+![CommonRoom Listings](screenshots/listings.png)
 ---
 
 ## Features
