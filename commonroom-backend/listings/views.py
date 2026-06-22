@@ -7,14 +7,31 @@ from .serializers import ListingSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
+from rest_framework.pagination import PageNumberPagination
+
 @api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 def listing_list(request):
-    ...
     if request.method == 'GET':
         listings = Listing.objects.all()
-        serializer = ListingSerializer(listings, many=True, context={'request': request})
-        return Response(serializer.data)
+        
+        # Filter by category
+        category = request.query_params.get('category')
+        if category and category != 'All':
+            listings = listings.filter(category=category)
+            
+        # Filter by search term
+        search = request.query_params.get('search')
+        if search:
+            listings = listings.filter(title__icontains=search)
+
+        # Pagination
+        paginator = PageNumberPagination()
+        paginator.page_size = 9
+        paginated_listings = paginator.paginate_queryset(listings, request)
+        
+        serializer = ListingSerializer(paginated_listings, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
 
     if request.method == 'POST':
         if not request.user.is_authenticated:

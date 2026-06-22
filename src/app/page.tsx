@@ -22,35 +22,71 @@ type Listing = {
 
 export default function Home() {
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  
   const [allListings, setAllListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+      setAllListings([]);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    setPage(1);
+    setAllListings([]);
+  };
 
   useEffect(() => {
-    api.get('/listings/')
+    if (page === 1) setLoading(true);
+    else setLoadingMore(true);
+
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+    });
+
+    if (debouncedSearch) {
+      queryParams.append("search", debouncedSearch);
+    }
+    
+    if (selectedCategory !== "All") {
+      queryParams.append("category", selectedCategory);
+    }
+
+    api.get(`/listings/?${queryParams.toString()}`)
       .then((response) => {
-        setAllListings(response.data);
+        // DRF PageNumberPagination returns { count, next, previous, results }
+        const results = response.data.results;
+        
+        if (page === 1) {
+          setAllListings(results);
+        } else {
+          setAllListings((prev) => [...prev, ...results]);
+        }
+        
+        setHasMore(response.data.next !== null);
         setLoading(false);
+        setLoadingMore(false);
       })
       .catch((err) => {
         console.error(err);
         setError("Failed to load listings. Is the backend running?");
         setLoading(false);
+        setLoadingMore(false);
       });
-  }, []);
-
-  const filteredListings = allListings.filter((item) => {
-    const matchesSearch = item.title
-      .toLowerCase()
-      .includes(search.toLowerCase());
-
-    const matchesCategory =
-      selectedCategory === "All" ||
-      item.category === selectedCategory;
-
-    return matchesSearch && matchesCategory;
-  });
+  }, [page, debouncedSearch, selectedCategory]);
 
   return (
     <main>
@@ -63,7 +99,7 @@ export default function Home() {
             (category) => (
               <button
                 key={category}
-                onClick={() => setSelectedCategory(category)}
+                onClick={() => handleCategoryChange(category)}
                 className={`px-4 py-2 rounded-full border transition ${
                   selectedCategory === category
                     ? "bg-indigo-600 text-white shadow-md"
@@ -84,7 +120,7 @@ export default function Home() {
           </div>
         )}
 
-        {error && (
+        {error && !loading && (
           <div className="text-center py-12">
             <p className="text-red-500">{error}</p>
           </div>
@@ -92,7 +128,7 @@ export default function Home() {
 
         {!loading && !error && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredListings.map((item) => (
+            {allListings.map((item) => (
               <ListingCard
                 key={item.id}
                 id={item.id}
@@ -102,16 +138,27 @@ export default function Home() {
                 seller={item.seller}
                 program={item.program}
                 year={item.year}
-                // inside the map:
                 image={getImageUrl(item.image)}
               />
             ))}
           </div>
         )}
 
-        {!loading && !error && filteredListings.length === 0 && (
+        {!loading && !error && allListings.length === 0 && (
           <div className="text-center py-12">
             <p className="text-gray-500 text-lg">No listings found.</p>
+          </div>
+        )}
+
+        {!loading && hasMore && (
+          <div className="text-center mt-12">
+            <button
+              onClick={() => setPage((p) => p + 1)}
+              disabled={loadingMore}
+              className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-50 disabled:opacity-50 transition"
+            >
+              {loadingMore ? "Loading..." : "Load More"}
+            </button>
           </div>
         )}
       </section>
