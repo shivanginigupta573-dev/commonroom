@@ -36,7 +36,7 @@ class Listing(models.Model):
         null=True,
         blank=True
     )
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=200, db_index=True)
     description = models.TextField(blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
