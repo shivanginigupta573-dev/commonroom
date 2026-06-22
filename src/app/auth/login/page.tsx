@@ -37,7 +37,7 @@ export default function LoginPage() {
       router.push("/");
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.error || "Login failed. Please try again.");
+      setError(err.response?.data?.detail || err.response?.data?.error || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }

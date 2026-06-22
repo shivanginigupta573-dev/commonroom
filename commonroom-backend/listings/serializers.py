@@ -1,26 +1,35 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import Listing
 
-class ListingSerializer(serializers.ModelSerializer):
-    image_url = serializers.SerializerMethodField()
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Customizes the Simple JWT token response to include the 
+    user object that the Next.js frontend expects.
+    """
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        # Add custom claims into the encrypted JWT token payload if needed
+        token['username'] = user.username
+        return token
 
+    def validate(self, attrs):
+        # This generates the standard 'access' and 'refresh' tokens
+        data = super().validate(attrs)
+        
+        # This injects the 'user' key into response.data for your frontend
+        data['user'] = {
+            'id': self.user.id,
+            'username': self.user.username,
+            'email': self.user.email,
+        }
+        return data
+
+
+class ListingSerializer(serializers.ModelSerializer):
+   
     class Meta:
         model = Listing
         fields = '__all__'
-        extra_kwargs = {
-            'image': {'write_only': True}
-        }
-
-    def get_image_url(self, obj):
-        if obj.image:
-            request = self.context.get('request')
-            image_url = obj.image.url
-            if request is not None:
-                return request.build_absolute_uri(image_url)
-            return image_url
-        return None
-    
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data['image'] = data.pop('image_url')
-        return data
+        read_only_fields = ['user']

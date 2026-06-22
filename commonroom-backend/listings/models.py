@@ -46,7 +46,7 @@ class Listing(models.Model):
     year = models.CharField(max_length=20)
     seller = models.CharField(max_length=100)
     campus = models.CharField(max_length=100, default='NIT Durgapur')
-    image = models.ImageField(upload_to='listings/', blank=True, null=True)
+    image = models.URLField(blank=True, null=True)
     is_negotiable = models.BooleanField(default=True)
     status = models.CharField(max_length=20, default='active')
     created_at = models.DateTimeField(auto_now_add=True)

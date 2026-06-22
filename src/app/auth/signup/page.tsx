@@ -51,7 +51,7 @@ export default function SignupPage() {
       router.push("/");
     } catch (err: any) {
       console.error(err);
-      setError(err.response?.data?.error || "Signup failed. Please try again.");
+      setError(err.response?.data?.detail || err.response?.data?.error || "Signup failed. Please try again.");
     } finally {
       setLoading(false);
     }
