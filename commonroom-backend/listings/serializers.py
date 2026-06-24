@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from .models import Listing
+from .models import Listing, Favorite
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
@@ -28,8 +28,22 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 
 class ListingSerializer(serializers.ModelSerializer):
-   
+    # Uses prefetched set from context — O(1) lookup, no extra DB queries
+    is_favorited = serializers.SerializerMethodField()
+
     class Meta:
         model = Listing
         fields = '__all__'
         read_only_fields = ['user']
+
+    def get_is_favorited(self, obj):
+        favorited_ids = self.context.get('favorited_ids', set())
+        return obj.id in favorited_ids
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    listing = ListingSerializer(read_only=True)
+
+    class Meta:
+        model = Favorite
+        fields = ['id', 'listing', 'created_at']

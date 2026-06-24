@@ -16,4 +16,8 @@ urlpatterns = [
     # Listings
     path('listings/', views.listing_list, name='listing-list'),
     path('listings/<int:pk>/', views.listing_detail, name='listing-detail'),
+    path('listings/<int:pk>/favorite/', views.toggle_favorite, name='toggle-favorite'),
+
+    # User-specific
+    path('users/me/favorites/', views.my_favorites, name='my-favorites'),
 ]

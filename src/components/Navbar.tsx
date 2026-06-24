@@ -52,7 +52,13 @@ export default function Navbar() {
               className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
             >
               Post Item
-            </Link>
+  </Link>
+  <Link
+    href="/favorites"
+    className="text-sm text-gray-700 hover:text-indigo-600 transition font-medium"
+  >
+    Saved
+  </Link>
             <div className="flex items-center gap-3 pl-4 border-l">
               <span className="text-sm text-gray-700">{user.username}</span>
               <button
