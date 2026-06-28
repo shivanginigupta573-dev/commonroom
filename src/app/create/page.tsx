@@ -11,7 +11,22 @@ export default function CreateListing() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    price: '',
+    category: 'Books',
+    listing_type: 'sell',
+    condition: 'good',
+    program: 'BTech',
+    year: '1st Year',
+    seller: '',
+    campus: 'NIT Durgapur',
+    is_negotiable: true,
+  });
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
@@ -19,7 +34,6 @@ export default function CreateListing() {
       router.push('/auth/login');
     } else {
       setIsAuthenticated(true);
-      // Auto-populate seller name from user data stored during login
       const userData = localStorage.getItem('user');
       if (userData) {
         try {
@@ -37,20 +51,6 @@ export default function CreateListing() {
     }
   }, [router]);
 
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    price: '',
-    category: 'Books',
-    listing_type: 'sell',
-    condition: 'good',
-    program: 'BTech',
-   year: '1st Year',
-    seller: '',
-    campus: 'NIT Durgapur',
-    is_negotiable: true,
-  });
-
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -66,8 +66,10 @@ export default function CreateListing() {
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setImage(e.target.files[0]);
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setImage(file);
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -94,7 +96,7 @@ export default function CreateListing() {
         data.append('image', image);
       }
 
-      const response = await api.post('/listings/', data);
+      await api.post('/listings/', data);
 
       setSuccess(true);
       setTimeout(() => {
@@ -104,203 +106,288 @@ export default function CreateListing() {
       console.error(err);
       setError(err.response?.data?.message || 'Failed to create listing. Please try again.');
     } finally {
-      setLoading(false);
+      loading && setLoading(false);
     }
   };
 
-  if (!isAuthenticated) {
-    return null;
-  }
+  if (!isAuthenticated) return null;
 
   return (
-    <main>
+    <main className="bg-gray-50/50 min-h-screen pb-16">
       <Navbar />
-      <section className="max-w-2xl mx-auto px-8 py-10">
-        <h1 className="text-3xl font-bold mb-8">Post a New Item</h1>
+      
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
+        {/* Header Block */}
+        <div className="border-b border-gray-200 pb-5 mb-8">
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Post a New Item</h1>
+          <p className="mt-2 text-sm text-gray-500">List an item out to the NIT Durgapur campus community.</p>
+        </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg border border-red-200">
+          <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl border border-red-100 text-sm font-medium">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-lg border border-green-200">
+          <div className="mb-6 p-4 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 text-sm font-medium animate-pulse">
             Listing created successfully! Redirecting...
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium mb-2">Title *</label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              required
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              placeholder="e.g., Physics Textbook"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Description</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 h-24"
-              placeholder="Describe the item in detail..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-8 bg-white border border-gray-200 p-6 sm:p-8 rounded-2xl shadow-xs">
+          
+          {/* SECTION 1: Product Strategy Segment */}
+          <div className="space-y-5">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400">1. Listing Type &amp; Category</h3>
+            
+            {/* Custom Interactive Segment Radio Pill instead of generic inputs */}
             <div>
-              <label className="block text-sm font-medium mb-2">Price *</label>
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleInputChange}
-                required
-                step="0.01"
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-                placeholder="0.00"
-              />
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2.5">What are you looking to do? *</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {['sell', 'rent', 'borrow', 'free'].map((type) => (
+                  <label 
+                    key={type}
+                    className={`border rounded-xl p-3 text-center cursor-pointer font-medium text-sm transition capitalize block ${
+                      formData.listing_type === type 
+                        ? 'border-indigo-600 bg-indigo-50/40 text-indigo-700 font-semibold' 
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <input 
+                      type="radio" 
+                      name="listing_type" 
+                      value={type} 
+                      checked={formData.listing_type === type}
+                      onChange={handleInputChange}
+                      className="sr-only" 
+                    />
+                    {type}
+                  </label>
+                ))}
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Category *</label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              >
-                <option value="Books">Books</option>
-                <option value="Hostel Essentials">Hostel Essentials</option>
-                <option value="Cycles">Cycles</option>
-                <option value="Study Material">Study Material</option>
-              </select>
-            </div>
-          </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Category *</label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 bg-white"
+                >
+                  <option value="Books">Books</option>
+                  <option value="Hostel Essentials">Hostel Essentials</option>
+                  <option value="Cycles">Cycles</option>
+                  <option value="Study Material">Study Material</option>
+                </select>
+              </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Listing Type *</label>
-              <select
-                name="listing_type"
-                value={formData.listing_type}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              >
-                <option value="sell">Sell</option>
-                <option value="rent">Rent</option>
-                <option value="borrow">Borrow</option>
-                <option value="free">Free</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Condition *</label>
-              <select
-                name="condition"
-                value={formData.condition}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              >
-                <option value="new">New</option>
-                <option value="like_new">Like New</option>
-                <option value="good">Good</option>
-                <option value="fair">Fair</option>
-              </select>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Item Condition *</label>
+                <select
+                  name="condition"
+                  value={formData.condition}
+                  onChange={handleInputChange}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 bg-white"
+                >
+                  <option value="new">Brand New</option>
+                  <option value="like_new">Like New / Mint</option>
+                  <option value="good">Good Condition</option>
+                  <option value="fair">Fair / Used</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Program *</label>
-              <select
-                name="program"
-                value={formData.program}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              >
-                <option value="BTech">BTech</option>
-                <option value="MTech">MTech</option>
-                <option value="PhD">PhD</option>
-              </select>
-            </div>
+          <hr className="border-gray-100" />
 
+          {/* SECTION 2: Core Data Content Form Elements */}
+          <div className="space-y-5">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400">2. Core Details</h3>
+            
             <div>
-              <label className="block text-sm font-medium mb-2">Year *</label>
-              <select
-                name="year"
-                value={formData.year}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600">
-                <option value="1st Year">1st Year</option>
-                <option value="2nd Year">2nd Year</option>
-                <option value="3rd Year">3rd Year</option>
-                <option value="4th Year">4th Year</option>
-                <option value="5th Year">5th Year</option>
-              </select> 
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Seller Name *</label>
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Item Title *</label>
               <input
                 type="text"
-                name="seller"
-                value={formData.seller}
-                readOnly
-                className="w-full px-4 py-2 border rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
-                placeholder="Auto-populated from account"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                required
+                maxLength={80}
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600"
+                placeholder="e.g., HC Verma Physics Vol 1 (With Solutions)"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Detailed Description</label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                rows={4}
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 resize-none"
+                placeholder="Mention features, specific wear details, pickup locations around campus, or specific blocks..."
+              />
+            </div>
+
+            {/* Price block styling adjustments */}
+            <div className="p-4 bg-gray-50/70 border border-gray-200 rounded-xl space-y-4">
+              <div className="max-w-xs">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Target Price (₹) *</label>
+                <div className="relative rounded-xl shadow-2xs">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <span className="text-gray-400 text-sm font-medium">₹</span>
+                  </div>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleInputChange}
+                    required
+                    disabled={formData.listing_type === 'free'}
+                    step="1"
+                    className="w-full pl-8 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 disabled:bg-gray-100 disabled:text-gray-400 font-semibold"
+                    placeholder={formData.listing_type === 'free' ? "0" : "Enter price"}
+                  />
+                </div>
+              </div>
+
+              {formData.listing_type !== 'free' && (
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="is_negotiable"
+                    name="is_negotiable"
+                    checked={formData.is_negotiable}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                  />
+                  <label htmlFor="is_negotiable" className="ml-2 text-sm text-gray-600 select-none font-medium">
+                    I am open to price negotiations
+                  </label>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <hr className="border-gray-100" />
+
+          {/* SECTION 3: Customized Professional Media Uploader */}
+          <div className="space-y-5">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400">3. Media Presentation</h3>
+            <div>
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Product Photo</label>
+              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-200 border-dashed rounded-xl hover:border-gray-300 transition relative bg-gray-50/30">
+                <div className="space-y-1 text-center">
+                  {imagePreview ? (
+                    <div className="relative mx-auto max-h-48 overflow-hidden rounded-lg mb-2">
+                      <img src={imagePreview} alt="Upload Preview" className="object-contain h-44 w-auto rounded-md" />
+                      <button
+                        type="button"
+                        onClick={() => { setImage(null); setImagePreview(null); }}
+                        className="absolute top-1 right-1 bg-gray-900/80 text-white rounded-full p-1 hover:bg-gray-900 transition"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                        <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4-4m4-24h8m-4-4v8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <div className="flex text-sm text-gray-600 justify-center">
+                        <span className="relative cursor-pointer bg-white rounded-md font-semibold text-indigo-600 hover:text-indigo-500 focus-within:outline-none">
+                          Upload a file
+                        </span>
+                        <p className="pl-1 text-gray-500">or drag and drop</p>
+                      </div>
+                      <p className="text-xs text-gray-400">PNG, JPG, WEBP up to 5MB</p>
+                    </>
+                  )}
+                  <input type="file" onChange={handleImageChange} accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr className="border-gray-100" />
+
+          {/* SECTION 4: Context parameters */}
+          <div className="space-y-5">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-gray-400">4. Context Metadata</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Program Context *</label>
+                <select
+                  name="program"
+                  value={formData.program}
+                  onChange={handleInputChange}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 bg-white"
+                >
+                  <option value="BTech">BTech</option>
+                  <option value="MTech">MTech</option>
+                  <option value="PhD">PhD</option>
+                  <option value="MSc">MSc</option>
+                  <option value="MCA">MCA</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Target Academic Year *</label>
+                <select
+                  name="year"
+                  value={formData.year}
+                  onChange={handleInputChange}
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600 bg-white"
+                >
+                  <option value="1st Year">1st Year</option>
+                  <option value="2nd Year">2nd Year</option>
+                  <option value="3rd Year">3rd Year</option>
+                  <option value="4th Year">4th Year</option>
+                  <option value="5th Year">5th Year</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Seller Signoff</label>
+                <input
+                  type="text"
+                  name="seller"
+                  value={formData.seller}
+                  readOnly
+                  className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 text-gray-500 font-medium cursor-not-allowed"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Hub Campus Area</label>
+              <input
+                type="text"
+                name="campus"
+                value={formData.campus}
+                onChange={handleInputChange}
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-600/20 focus:border-indigo-600"
+                placeholder="NIT Durgapur"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">Campus</label>
-            <input
-              type="text"
-              name="campus"
-              value={formData.campus}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-              placeholder="NIT Durgapur"
-            />
+          {/* Form Action Submit Button */}
+          <div className="pt-4">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gray-950 text-white px-6 py-3.5 rounded-xl font-bold hover:bg-gray-800 active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed transition text-sm tracking-wide shadow-xs"
+            >
+              {loading ? 'Publishing Entry...' : 'Post Listing'}
+            </button>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Image</label>
-            <input
-              type="file"
-              onChange={handleImageChange}
-              accept="image/*"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600"
-            />
-          </div>
-
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              name="is_negotiable"
-              checked={formData.is_negotiable}
-              onChange={handleInputChange}
-              className="h-4 w-4 text-indigo-600 rounded"
-            />
-            <label className="ml-2 text-sm">Price is negotiable</label>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            {loading ? 'Creating...' : 'Post Item'}
-          </button>
         </form>
       </section>
     </main>

@@ -139,6 +139,7 @@ export default function Home() {
                 program={item.program}
                 year={item.year}
                 image={getImageUrl(item.image)}
+                isFavorited={(item as any).is_favorited}
               />
             ))}
           </div>
