@@ -59,25 +59,25 @@ export default function ListingCard({
   };
 
   return (
-    <Link href={`/listing/${id}`}>
-      <Card className="overflow-hidden hover:shadow-xl transition relative group">
+    <Link href={`/listing/${id}`} className="group block">
+      <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-200/80 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden relative">
         
         {/* Heart Button */}
         {isLoggedIn && (
           <button
             onClick={handleFavoriteClick}
             disabled={loading}
-            className="absolute top-3 right-3 p-2 bg-white/80 hover:bg-white backdrop-blur-sm rounded-full shadow-sm transition-all z-10"
+            className="absolute top-3 right-3 p-2 bg-white/90 hover:bg-white rounded-full shadow-sm border border-gray-100 transition-all z-10 active:scale-95"
             aria-label="Toggle favorite"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill={isFavorited ? "currentColor" : "none"}
               viewBox="0 0 24 24"
-              strokeWidth={1.5}
+              strokeWidth={2}
               stroke="currentColor"
-              className={`w-6 h-6 transition-colors ${
-                isFavorited ? "text-red-500" : "text-gray-500 hover:text-red-400"
+              className={`w-5 h-5 transition-colors ${
+                isFavorited ? "text-red-500 stroke-red-500" : "text-gray-400 stroke-gray-400 hover:text-red-400 hover:stroke-red-400"
               }`}
             >
               <path
@@ -89,32 +89,44 @@ export default function ListingCard({
           </button>
         )}
 
-        <img
-          src={image}
-          alt={title}
-          className="h-48 w-full object-cover"
-        />
+        {/* Image Box */}
+        <div className="w-full aspect-[4/3] bg-gray-100 overflow-hidden">
+          <img
+            src={image}
+            alt={title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
+          />
+        </div>
 
-        <CardContent className="p-4">
-          <h3 className="font-semibold text-lg line-clamp-1">{title}</h3>
+        {/* Content Box */}
+        <div className="p-4 flex flex-col flex-grow">
+          <div className="flex justify-between items-start gap-2 mb-1">
+            <h3 className="font-semibold text-gray-900 text-base line-clamp-1 leading-tight">
+              {title}
+            </h3>
+            <p className="font-bold text-gray-900 text-base leading-tight">
+              ₹{price}
+            </p>
+          </div>
 
-          <p className="text-xl font-bold text-indigo-600 mt-2">
-            ₹{price}
-          </p>
-
-          <p className="text-sm text-gray-500 mt-2 line-clamp-1">
+          <p className="text-sm text-gray-500 line-clamp-1 mb-3">
             {campus}
           </p>
 
-          <p className="text-sm mt-1 line-clamp-1">
-            Seller: {seller}
-          </p>
-
-          <p className="text-xs text-gray-500 mt-1">
-            {program} • {year}
-          </p>
-        </CardContent>
-      </Card>
+          <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <div className="w-5 h-5 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center">
+                <span className="text-[10px] font-medium text-gray-600 uppercase">{seller.charAt(0)}</span>
+              </div>
+              <span className="text-xs text-gray-600 truncate font-medium">{seller}</span>
+            </div>
+            
+            <span className="text-[11px] px-2 py-1 bg-gray-100 text-gray-600 rounded-md font-medium whitespace-nowrap">
+              {program} '{year.slice(-2)}
+            </span>
+          </div>
+        </div>
+      </div>
     </Link>
   );
 }

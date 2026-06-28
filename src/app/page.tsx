@@ -94,16 +94,16 @@ export default function Home() {
       <Hero search={search} setSearch={setSearch} />
 
       <section className="max-w-7xl mx-auto px-8 py-10">
-        <div className="flex gap-3 mb-8 flex-wrap">
+        <div className="flex gap-2.5 mb-10 flex-wrap">
           {["All", "Books", "Hostel Essentials", "Cycles", "Study Material"].map(
             (category) => (
               <button
                 key={category}
                 onClick={() => handleCategoryChange(category)}
-                className={`px-4 py-2 rounded-full border transition ${
+                className={`px-4 py-1.5 text-sm font-medium rounded-full border transition-all duration-200 ${
                   selectedCategory === category
-                    ? "bg-indigo-600 text-white shadow-md"
-                    : "bg-white hover:bg-gray-50"
+                    ? "bg-gray-900 text-white border-gray-900 shadow-sm"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-900 hover:bg-gray-50"
                 }`}
               >
                 {category}
@@ -112,11 +112,21 @@ export default function Home() {
           )}
         </div>
 
-        <h2 className="text-2xl font-bold mb-6">Listings</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">
+            {selectedCategory === "All" ? "Recent Additions" : `${selectedCategory}`}
+          </h2>
+          {!loading && (
+            <span className="text-sm text-gray-500 font-medium tracking-wide">
+              {allListings.length} {allListings.length === 1 ? 'ITEM' : 'ITEMS'}
+            </span>
+          )}
+        </div>
 
         {loading && (
-          <div className="text-center py-12">
-            <p className="text-gray-400">Loading listings...</p>
+          <div className="text-center py-20">
+            <div className="w-8 h-8 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-500 font-medium">Fetching listings...</p>
           </div>
         )}
 
@@ -152,13 +162,20 @@ export default function Home() {
         )}
 
         {!loading && hasMore && (
-          <div className="text-center mt-12">
+          <div className="text-center mt-12 mb-8">
             <button
               onClick={() => setPage((p) => p + 1)}
               disabled={loadingMore}
-              className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-50 disabled:opacity-50 transition"
+              className="px-6 py-2.5 rounded-full border border-gray-300 text-sm font-semibold text-gray-700 hover:border-gray-400 hover:text-gray-900 hover:bg-gray-50 disabled:opacity-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-200"
             >
-              {loadingMore ? "Loading..." : "Load More"}
+              {loadingMore ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                  Loading...
+                </span>
+              ) : (
+                "Load More"
+              )}
             </button>
           </div>
         )}
