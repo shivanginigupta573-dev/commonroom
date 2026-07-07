@@ -2,7 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import {
+  ShoppingBag,
+  Store,
+  HandCoins,
+  Heart,
+  Plus,
+  LogOut,
+  User,
+} from "lucide-react";
 
 type User = {
   id: number;
@@ -12,83 +21,156 @@ type User = {
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
+
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
-  }, []);
+    const stored = localStorage.getItem("user");
+    if (stored) setUser(JSON.parse(stored));
+    loading && setLoading(false);
+  }, [loading]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("user");
-    setUser(null);
+  function logout() {
+    localStorage.clear();
     router.push("/");
-  };
+  }
+
+  const navItems = [
+    {
+      href: "/",
+      label: "Browse",
+      icon: ShoppingBag,
+    },
+    {
+      href: "/?type=sell",
+      label: "Buy",
+      icon: Store,
+    },
+    {
+      href: "/?type=rent",
+      label: "Rent",
+      icon: HandCoins,
+    },
+    {
+      href: "/?type=borrow",
+      label: "Borrow",
+      icon: HandCoins,
+    },
+  ];
 
   return (
-    <nav className="flex items-center justify-between px-8 py-4 border-b bg-white">
-      <Link href="/" className="flex items-center gap-2 hover:opacity-80">
-        <div className="w-8 h-8 rounded-lg bg-blue-900" />
-        <h1 className="text-xl font-bold text-blue-900">CommonRoom</h1>
-      </Link>
+    // Integrated #8895B3 as a soft subtle border line and configured background blur
+    <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-[#8895B3]/20">
+      <div className="max-w-7xl mx-auto h-20 px-6 flex items-center justify-between">
 
-      <div className="hidden md:flex gap-8 text-sm font-medium">
-        <Link href="/" className="hover:text-indigo-600">
-          Marketplace
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-3 group">
+          {/* Logo Gradient using Soft Periwinkle (#8E94F2) to Wisteria Blue (#9FA0FF) */}
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#8E94F2] to-[#9FA0FF] flex items-center justify-center shadow-md shadow-[#8E94F2]/20 transition-transform group-hover:scale-105 duration-200">
+            <ShoppingBag className="w-5 h-5 text-white" />
+          </div>
+
+          <div>
+            <h1 className="font-bold text-xl text-gray-900 tracking-tight">
+              CommonRoom
+            </h1>
+          </div>
         </Link>
-      </div>
 
-      <div className="flex items-center gap-4">
-        {!loading && user ? (
-          <>
-            <Link
-              href="/favorites"
-              className="text-gray-700 hover:text-indigo-600 transition flex items-center gap-1 font-medium"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-              </svg>
-              Saved
-            </Link>
-            <Link
-              href="/create"
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
-            >
-              Post Item
-            </Link>
-            <div className="flex items-center gap-3 pl-4 border-l">
-              <span className="text-sm text-gray-700">{user.username}</span>
-              <button
-                onClick={handleLogout}
-                className="text-sm text-red-600 hover:text-red-700 font-medium"
+        {/* Navigation */}
+        {/* Using a very soft Mauve tinted background (#BBADFF/10) for the pill container */}
+        <nav className="hidden lg:flex bg-[#BBADFF]/10 rounded-full p-1 gap-1 border border-[#BBADFF]/20">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = pathname === item.href;
+
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={`flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium transition duration-200
+                ${
+                  active
+                    ? "bg-white shadow-sm text-[#8E94F2]"
+                    : "text-gray-600 hover:text-[#8E94F2] hover:bg-white/50"
+                }`}
               >
-                Logout
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <Link
-              href="/auth/login"
-              className="text-gray-700 hover:text-indigo-600 transition"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/auth/signup"
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
-            >
-              Sign Up
-            </Link>
-          </>
-        )}
+                <Icon size={16} />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Right Actions */}
+        <div className="flex items-center gap-3">
+          {!loading && user ? (
+            <>
+              {/* Favorites button featuring subtle hover text matching #8E94F2 */}
+              <Link
+                href="/favorites"
+                className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:border-[#8E94F2]/40 hover:text-[#8E94F2] hover:bg-[#8E94F2]/5 transition duration-200"
+              >
+                <Heart size={18} />
+              </Link>
+
+              {/* Main Call To Action matching the prominent Wisteria Blue (#9FA0FF) */}
+              <Link
+                href="/create"
+                className="flex items-center gap-2 bg-[#9FA0FF] hover:bg-[#8E94F2] text-white px-5 py-2.5 rounded-full font-medium shadow-sm transition duration-200"
+              >
+                <Plus size={18} />
+                Post
+              </Link>
+
+              <div className="flex items-center gap-3 pl-2 border-l border-gray-200">
+                {/* User Avatar utilizing deep Mauve pastel hue (#DAB6FC) */}
+                <div className="w-10 h-10 rounded-full bg-[#DAB6FC]/20 flex items-center justify-center">
+                  <User
+                    size={18}
+                    className="text-[#BBADFF]"
+                  />
+                </div>
+
+                <div className="hidden xl:block">
+                  <p className="text-sm font-semibold text-gray-800">
+                    {user.username}
+                  </p>
+                  <p className="text-xs text-[#8895B3]">
+                    {user.email}
+                  </p>
+                </div>
+
+                <button
+                  onClick={logout}
+                  className="text-gray-400 hover:text-red-500 transition duration-200 p-1"
+                  title="Logout"
+                >
+                  <LogOut size={18} />
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/auth/login"
+                className="text-gray-600 hover:text-black font-medium transition duration-200 text-sm"
+              >
+                Login
+              </Link>
+
+              <Link
+                href="/auth/signup"
+                className="bg-[#9FA0FF] text-white px-5 py-2.5 rounded-full font-medium hover:bg-[#8E94F2] shadow-sm transition duration-200 text-sm"
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
+        </div>
       </div>
-    </nav>
+    </header>
   );
 }

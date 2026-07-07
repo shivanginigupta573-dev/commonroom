@@ -67,7 +67,6 @@ export default function Home() {
 
     api.get(`/listings/?${queryParams.toString()}`)
       .then((response) => {
-        // DRF PageNumberPagination returns { count, next, previous, results }
         const results = response.data.results;
         
         if (page === 1) {
@@ -89,21 +88,26 @@ export default function Home() {
   }, [page, debouncedSearch, selectedCategory]);
 
   return (
-    <main>
+    // Styled background container with your high contrast theme context base text colors
+    <div className="min-h-screen bg-slate-50/50 text-[#2E335A]">
       <Navbar />
+      
+      {/* Passing search state safely into your separate presentation component */}
       <Hero search={search} setSearch={setSearch} />
 
       <section className="max-w-7xl mx-auto px-8 py-10">
-        <div className="flex gap-2.5 mb-10 flex-wrap">
+        
+        {/* Modern Category Pill Selector featuring custom theme colors */}
+        <div className="flex gap-2.5 mb-12 flex-wrap">
           {["All", "Books", "Hostel Essentials", "Cycles", "Study Material"].map(
             (category) => (
               <button
                 key={category}
                 onClick={() => handleCategoryChange(category)}
-                className={`px-4 py-1.5 text-sm font-medium rounded-full border transition-all duration-200 ${
+                className={`px-5 py-2 text-sm font-semibold rounded-full border transition-all duration-200 ${
                   selectedCategory === category
-                    ? "bg-gray-900 text-white border-gray-900 shadow-sm"
-                    : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:text-gray-900 hover:bg-gray-50"
+                    ? "bg-[#6366F1] text-white border-[#6366F1] shadow-md shadow-[#6366F1]/10"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-[#8E94F2]/40 hover:text-[#6366F1] hover:bg-[#8E94F2]/5"
                 }`}
               >
                 {category}
@@ -112,32 +116,35 @@ export default function Home() {
           )}
         </div>
 
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">
+        {/* Section Header */}
+        <div className="flex items-center justify-between mb-8 border-b border-gray-100 pb-4">
+          <h2 className="text-2xl font-bold tracking-tight text-[#2E335A]">
             {selectedCategory === "All" ? "Recent Additions" : `${selectedCategory}`}
           </h2>
           {!loading && (
-            <span className="text-sm text-gray-500 font-medium tracking-wide">
-              {allListings.length} {allListings.length === 1 ? 'ITEM' : 'ITEMS'}
+            <span className="text-xs font-bold uppercase tracking-wider text-[#8895B3] bg-gray-100 px-3 py-1.5 rounded-md">
+              {allListings.length} {allListings.length === 1 ? 'Item' : 'Items'}
             </span>
           )}
         </div>
 
+        {/* Loading Spinner tailored with themed brand accent ring color */}
         {loading && (
           <div className="text-center py-20">
-            <div className="w-8 h-8 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-500 font-medium">Fetching listings...</p>
+            <div className="w-9 h-9 border-4 border-[#8E94F2]/20 border-t-[#6366F1] rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-[#8895B3] font-medium text-sm">Fetching campus items...</p>
           </div>
         )}
 
         {error && !loading && (
-          <div className="text-center py-12">
-            <p className="text-red-500">{error}</p>
+          <div className="text-center py-12 bg-red-50/50 rounded-2xl border border-red-150 p-6">
+            <p className="text-red-500 font-medium">{error}</p>
           </div>
         )}
 
+        {/* Grid display layout */}
         {!loading && !error && (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {allListings.map((item) => (
               <ListingCard
                 key={item.id}
@@ -155,31 +162,33 @@ export default function Home() {
           </div>
         )}
 
+        {/* Empty state markup */}
         {!loading && !error && allListings.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No listings found.</p>
+          <div className="text-center py-20 bg-white border border-gray-100 rounded-3xl p-8">
+            <p className="text-gray-400 font-medium">No active listings match your parameters.</p>
           </div>
         )}
 
+        {/* Pagination load action controller using premium branding colors */}
         {!loading && hasMore && (
-          <div className="text-center mt-12 mb-8">
+          <div className="text-center mt-16 mb-8">
             <button
               onClick={() => setPage((p) => p + 1)}
               disabled={loadingMore}
-              className="px-6 py-2.5 rounded-full border border-gray-300 text-sm font-semibold text-gray-700 hover:border-gray-400 hover:text-gray-900 hover:bg-gray-50 disabled:opacity-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-200"
+              className="px-8 py-3 rounded-full border border-gray-200 text-sm font-bold text-[#2E335A] bg-white hover:border-[#8E94F2]/40 hover:text-[#6366F1] hover:bg-[#8E94F2]/5 disabled:opacity-50 transition-all duration-200 shadow-sm focus:outline-none"
             >
               {loadingMore ? (
                 <span className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
-                  Loading...
+                  <div className="w-4 h-4 border-2 border-gray-200 border-t-[#6366F1] rounded-full animate-spin"></div>
+                  Loading Content...
                 </span>
               ) : (
-                "Load More"
+                "Load More Items"
               )}
             </button>
           </div>
         )}
       </section>
-    </main>
+    </div>
   );
 }

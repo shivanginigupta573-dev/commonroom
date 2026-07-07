@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import ListingCard from "@/components/ListingCard";
 import api, { getImageUrl } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { Heart, Loader2, Bookmark, ArrowRight } from "lucide-react";
 
 export default function FavoritesPage() {
   const router = useRouter();
@@ -17,7 +18,6 @@ export default function FavoritesPage() {
   const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
-    // Check if logged in safely (only browser)
     const isLoggedIn = typeof window !== "undefined" ? !!localStorage.getItem("access_token") : false;
     
     if (!isLoggedIn) {
@@ -30,8 +30,6 @@ export default function FavoritesPage() {
 
     api.get(`/users/me/favorites/?page=${page}`)
       .then((response) => {
-        // DRF PageNumberPagination returns { count, next, previous, results }
-        // Each result is a Favorite object containing { id, listing, created_at }
         const results = response.data.results;
         
         if (page === 1) {
@@ -53,69 +51,104 @@ export default function FavoritesPage() {
   }, [page, router]);
 
   return (
-    <main>
+    <main className="min-h-screen bg-white text-slate-900 pb-16">
       <Navbar />
 
-      <section className="max-w-7xl mx-auto px-8 py-10">
-        <div className="flex items-center gap-3 mb-8">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" strokeWidth={1.5} stroke="none" className="w-8 h-8 text-red-500">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-          </svg>
-          <h2 className="text-3xl font-bold">Saved Items</h2>
+      <section className="max-w-7xl mx-auto px-6 md:px-10 py-10">
+        
+        {/* Header Section */}
+        <div className="flex items-center gap-2.5 mb-10">
+          <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-500 border border-rose-100/60">
+            <Heart size={20} fill="currentColor" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">Saved Items</h2>
+          </div>
         </div>
 
+        {/* Primary Screen Loading State */}
         {loading && (
-          <div className="text-center py-12">
-            <p className="text-gray-400">Loading your saved items...</p>
+          <div className="flex flex-col items-center justify-center py-24 space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            <p className="text-sm font-medium text-slate-400">Loading your saved items...</p>
           </div>
         )}
 
+        {/* Error Notification Alert */}
         {error && !loading && (
-          <div className="text-center py-12">
-            <p className="text-red-500">{error}</p>
-          </div>
-        )}
-
-        {!loading && !error && favorites.length > 0 && (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {favorites.map((fav) => (
-              <ListingCard
-                key={fav.listing.id}
-                id={fav.listing.id}
-                title={fav.listing.title}
-                price={Number(fav.listing.price)}
-                campus={fav.listing.campus}
-                seller={fav.listing.seller}
-                program={fav.listing.program}
-                year={fav.listing.year}
-                image={getImageUrl(fav.listing.image)}
-                isFavorited={true} // It's in the favorites list, so it's favorited!
-              />
-            ))}
-          </div>
-        )}
-
-        {!loading && !error && favorites.length === 0 && (
-          <div className="text-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-16 h-16 mx-auto text-gray-300 mb-4">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
-            </svg>
-            <h3 className="text-xl font-semibold text-gray-700">No saved items yet</h3>
-            <p className="text-gray-500 mt-2 max-w-sm mx-auto">Click the heart icon on any listing to save it for later. Your saved items will appear here.</p>
-          </div>
-        )}
-
-        {!loading && hasMore && (
-          <div className="text-center mt-12">
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={loadingMore}
-              className="bg-white border border-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium hover:bg-gray-50 disabled:opacity-50 transition"
+          <div className="max-w-md mx-auto text-center py-12 px-6 border border-slate-200 rounded-2xl">
+            <p className="text-sm font-semibold text-rose-600">{error}</p>
+            <button 
+              onClick={() => setPage(1)} 
+              className="mt-4 px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg"
             >
-              {loadingMore ? "Loading..." : "Load More"}
+              Try Again
             </button>
           </div>
         )}
+
+        {/* Clean,  Grid View Showcase */}
+        {!loading && !error && favorites.length > 0 && (
+          <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {favorites.map((fav) => (
+                <ListingCard
+                  key={fav.listing.id}
+                  id={fav.listing.id}
+                  title={fav.listing.title}
+                  price={Number(fav.listing.price)}
+                  campus={fav.listing.campus}
+                  seller={fav.listing.seller}
+                  program={fav.listing.program}
+                  year={fav.listing.year}
+                  image={getImageUrl(fav.listing.image)}
+                  isFavorited={true}
+                />
+              ))}
+            </div>
+
+            {/* Pagination Load Button Trigger */}
+            {hasMore && (
+              <div className="text-center mt-14">
+                <button
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={loadingMore}
+                  className="inline-flex items-center justify-center bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-xl font-bold text-xs hover:bg-slate-50 disabled:opacity-50 transition shadow-xs"
+                >
+                  {loadingMore ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 size={14} className="animate-spin text-slate-500" />
+                      Loading items...
+                    </span>
+                  ) : (
+                    "Load More Saved Items"
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Clean Flat Empty Canvas Graphic Block */}
+        {!loading && !error && favorites.length === 0 && (
+          <div className="text-center py-20 bg-slate-50/60 rounded-2xl border border-slate-200 max-w-xl mx-auto px-6">
+            <div className="w-12 h-12 bg-slate-100 rounded-xl flex items-center justify-center mx-auto text-slate-400 mb-4 border border-slate-200/50">
+              <Bookmark size={20} />
+            </div>
+            <h3 className="text-base font-bold text-slate-900">No saved items yet</h3>
+            <p className="text-xs font-medium text-slate-400 mt-1 max-w-xs mx-auto leading-relaxed">
+              Click the heart icon on any campus marketplace item to save it for quick review later on.
+            </p>
+            <button
+              onClick={() => router.push("/")}
+              className="mt-6 inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-slate-900 text-white font-bold text-xs px-5 py-3 rounded-xl transition"
+            >
+              Browse Marketplace
+              <ArrowRight size={14} />
+            </button>
+          </div>
+        )}
+        
       </section>
     </main>
   );
