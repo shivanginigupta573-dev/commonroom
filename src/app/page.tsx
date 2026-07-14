@@ -95,7 +95,7 @@ export default function Home() {
       {/* Passing search state safely into your separate presentation component */}
       <Hero search={search} setSearch={setSearch} />
 
-      <section className="max-w-7xl mx-auto px-8 py-10">
+      <section className="max-w-[1440px] mx-auto px-8 py-10">
         
         {/* Modern Category Pill Selector featuring custom theme colors */}
         <div className="flex gap-2.5 mb-12 flex-wrap">

@@ -1,10 +1,10 @@
 // src/components/ListingCard.tsx
+"use client";
 
-import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "@/lib/api";
-import { useEffect } from "react";
+import { MapPin, GraduationCap, Heart } from "lucide-react";
 
 interface ListingCardProps {
   id: number;
@@ -16,6 +16,8 @@ interface ListingCardProps {
   year: string;
   image: string;
   isFavorited?: boolean;
+  // Included listing_type if your backend passes it, defaults to sell style
+  listing_type?: "sell" | "rent" | "borrow" | "free"; 
 }
 
 export default function ListingCard({
@@ -28,18 +30,18 @@ export default function ListingCard({
   year,
   image,
   isFavorited: initialIsFavorited = false,
+  listing_type = "sell",
 }: ListingCardProps) {
   const [isFavorited, setIsFavorited] = useState(initialIsFavorited);
   const [loading, setLoading] = useState(false);
-
-  // Check if logged in safely (only browser)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   useEffect(() => {
-  setIsLoggedIn(!!localStorage.getItem("access_token"));
+    setIsLoggedIn(!!localStorage.getItem("access_token"));
   }, []);
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent link click
+    e.preventDefault(); 
     if (!isLoggedIn) {
       alert("Please log in to save items!");
       return;
@@ -58,72 +60,85 @@ export default function ListingCard({
     }
   };
 
+  // Dynamic status tags pulled right from the logo elements
+  const badgeStyles = {
+    sell: { bg: "bg-brand-coral/10", text: "text-brand-coral", label: "Selling" },
+    rent: { bg: "bg-brand-orange/10", text: "text-brand-orange", label: "For Rent" },
+    borrow: { bg: "bg-brand-purple/10", text: "text-brand-purple", label: "Borrowing" },
+    free: { bg: "bg-brand-blue/10", text: "text-brand-blue", label: "Freebie" },
+  };
+
+  const currentBadge = badgeStyles[listing_type] || badgeStyles.sell;
+
   return (
-    <Link href={`/listing/${id}`} className="group block">
-      <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-200/80 shadow-sm hover:shadow-md hover:border-gray-300 transition-all duration-200 overflow-hidden relative">
+    <Link href={`/listing/${id}`} className="group block h-full">
+      <div className="flex flex-col h-full bg-white rounded-3xl border-2 border-gray-100 shadow-xs hover:shadow-md hover:border-brand-purple/20 transition-all duration-300 overflow-hidden relative">
         
-        {/* Heart Button */}
+        {/* Transparent Badge Overlay */}
+        <div className={`absolute top-3 left-3 z-10 rounded-xl ${currentBadge.bg} ${currentBadge.text} px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wider shadow-xs`}>
+          {currentBadge.label}
+        </div>
+
+        {/* Brand-Accented Heart Button */}
         {isLoggedIn && (
           <button
             onClick={handleFavoriteClick}
             disabled={loading}
-            className="absolute top-3 right-3 p-2 bg-white/90 hover:bg-white rounded-full shadow-sm border border-gray-100 transition-all z-10 active:scale-95"
+            className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-xs hover:bg-white rounded-xl shadow-xs border border-gray-100 transition-all z-10 active:scale-90 disabled:opacity-50"
             aria-label="Toggle favorite"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill={isFavorited ? "currentColor" : "none"}
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
-              className={`w-5 h-5 transition-colors ${
-                isFavorited ? "text-red-500 stroke-red-500" : "text-gray-400 stroke-gray-400 hover:text-red-400 hover:stroke-red-400"
+            <Heart 
+              size={16}
+              className={`transition-colors ${
+                isFavorited 
+                  ? "fill-brand-coral text-brand-coral" 
+                  : "text-gray-400 hover:text-brand-coral"
               }`}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
-              />
-            </svg>
+            />
           </button>
         )}
 
-        {/* Image Box */}
-        <div className="w-full aspect-[4/3] bg-gray-100 overflow-hidden">
+        {/* Card Artwork Window */}
+        <div className="w-full aspect-[4/3] bg-gray-50 overflow-hidden">
           <img
-            src={image}
+            src={image || "/placeholder-gear.png"}
             alt={title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
           />
         </div>
 
-        {/* Content Box */}
-        <div className="p-4 flex flex-col flex-grow">
-          <div className="flex justify-between items-start gap-2 mb-1">
-            <h3 className="font-semibold text-gray-900 text-base line-clamp-1 leading-tight">
+        {/* Card Content Information */}
+        <div className="p-5 flex flex-col flex-grow">
+          <div className="flex justify-between items-start gap-3 mb-1">
+            <h3 className="font-bold text-gray-900 text-base line-clamp-1 leading-snug group-hover:text-brand-purple transition-colors">
               {title}
             </h3>
-            <p className="font-bold text-gray-900 text-base leading-tight">
-              ₹{price}
+            <p className="font-black text-gray-900 text-base leading-snug shrink-0">
+              {price === 0 ? "Free" : `₹${price}`}
             </p>
           </div>
 
-          <p className="text-sm text-gray-500 line-clamp-1 mb-3">
-            {campus}
-          </p>
+          {/* Location Line */}
+          <div className="flex items-center gap-1 text-gray-400 mt-1 mb-4">
+            <MapPin size={13} className="text-brand-orange" />
+            <p className="text-xs font-semibold tracking-wide uppercase truncate">
+              {campus}
+            </p>
+          </div>
 
-          <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between">
+          {/* Bottom Metabar Row */}
+          <div className="mt-auto pt-3.5 border-t border-gray-50 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 overflow-hidden">
-              <div className="w-5 h-5 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center">
-                <span className="text-[10px] font-medium text-gray-600 uppercase">{seller.charAt(0)}</span>
+              <div className="w-6 h-6 rounded-lg bg-brand-teal/10 text-brand-teal flex-shrink-0 flex items-center justify-center font-bold text-xs uppercase">
+                {seller.charAt(0)}
               </div>
-              <span className="text-xs text-gray-600 truncate font-medium">{seller}</span>
+              <span className="text-xs text-gray-600 truncate font-semibold">{seller}</span>
             </div>
             
-            <span className="text-[11px] px-2 py-1 bg-gray-100 text-gray-600 rounded-md font-medium whitespace-nowrap">
-              {program} '{year.slice(-2)}
-            </span>
+            <div className="flex items-center gap-1 text-[11px] font-bold text-gray-500 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100 whitespace-nowrap">
+              <GraduationCap size={13} className="text-brand-purple" />
+              <span>{program} '{year.slice(-2)}</span>
+            </div>
           </div>
         </div>
       </div>

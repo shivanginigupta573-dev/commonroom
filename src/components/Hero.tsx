@@ -32,7 +32,7 @@ export default function Hero({ search, setSearch }: HeroProps) {
       <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 via-white/85 to-[#BBADFF]/10" />
 
       {/* Text Content Area */}
-      <div className="relative z-10 max-w-7xl mx-auto px-8 py-20 w-full">
+      <div className="relative z-10 max-w-[1440px] mx-auto px-8 py-20 w-full">
         <div className="max-w-xl space-y-6">
           
           {/* Main heading styled cleanly with the requested high-contrast theme layout */}

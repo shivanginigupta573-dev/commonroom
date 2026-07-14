@@ -12,7 +12,7 @@ const categories = [
 
 export default function CategoryGrid() {
   return (
-    <section className="max-w-7xl mx-auto px-8 py-10">
+    <section className="max-w-[1440px] mx-auto px-8 py-10">
       <h2 className="text-2xl font-bold mb-6">
         Browse Categories
       </h2>

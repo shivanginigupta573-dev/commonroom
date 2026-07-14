@@ -20,4 +20,5 @@ urlpatterns = [
 
     # User-specific
     path('users/me/favorites/', views.my_favorites, name='my-favorites'),
+    path('users/me/listings/', views.my_listings, name='my-listings'),
 ]

@@ -179,3 +179,34 @@ def my_favorites(request):
         context={'request': request, 'favorited_ids': favorited_ids}
     )
     return paginator.get_paginated_response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_listings(request):
+    """Return all listings created by the current user, paginated."""
+    listings = Listing.objects.filter(user=request.user)
+    
+    # Filter by listing_type
+    listing_type = request.query_params.get('listing_type')
+    if listing_type and listing_type != 'All':
+        listings = listings.filter(listing_type=listing_type)
+
+    paginator = PageNumberPagination()
+    paginator.page_size = 9
+    paginated = paginator.paginate_queryset(listings, request)
+
+    # Pass favorited_ids so ListingSerializer shows is_favorited=True
+    paginated_listing_ids = [l.id for l in paginated]
+    favorited_ids = set(
+        Favorite.objects.filter(
+            user=request.user,
+            listing_id__in=paginated_listing_ids
+        ).values_list('listing_id', flat=True)
+    )
+
+    serializer = ListingSerializer(
+        paginated, many=True,
+        context={'request': request, 'favorited_ids': favorited_ids}
+    )
+    return paginator.get_paginated_response(serializer.data)

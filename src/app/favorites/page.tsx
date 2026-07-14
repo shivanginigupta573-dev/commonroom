@@ -54,7 +54,7 @@ export default function FavoritesPage() {
     <main className="min-h-screen bg-white text-slate-900 pb-16">
       <Navbar />
 
-      <section className="max-w-7xl mx-auto px-6 md:px-10 py-10">
+      <section className="max-w-[1440px] mx-auto px-6 md:px-10 py-10">
         
         {/* Header Section */}
         <div className="flex items-center gap-2.5 mb-10">
