@@ -5,6 +5,9 @@ A peer-to-peer campus marketplace for NIT Durgapur students to **buy, sell, rent
 🔗 **Live:** [commonroom-five.vercel.app](https://commonroom-five.vercel.app)
 
 ![CommonRoom Homepage](screenshots/homepage.png)
+![CommonRoom Listings](screenshots/listings.png)
+![CommonRoom Chat](screenshots/chat.png)
+![CommonRoom Dashboard](screenshots/mydashboard.png)
 
 ---
 
