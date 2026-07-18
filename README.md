@@ -1,97 +1,70 @@
 # CommonRoom
 
-> A peer-to-peer campus marketplace for NIT Durgapur students to buy, sell, rent, and borrow items.
+A peer-to-peer campus marketplace for NIT Durgapur students to **buy, sell, rent, and borrow** items — books, cycles, hostel essentials, and more.
 
-**Live Demo:** [commonroom-five.vercel.app](https://commonroom-five.vercel.app)
+🔗 **Live:** [commonroom-five.vercel.app](https://commonroom-five.vercel.app)
 
 ![CommonRoom Homepage](screenshots/homepage.png)
-![CommonRoom Listings](screenshots/listings.png)
----
-
-## Features
-
-- **JWT Authentication** — Register, login, logout with 1hr access tokens and 7-day refresh tokens. Automatic silent token refresh on expiry.
-- **Create Listings** — Post items with title, description, price, category, condition, and image upload via Cloudinary.
-- **Server-Side Search** — Debounced search queries sent to Django backend; filtered at the database level using `icontains` on an indexed field.
-- **Category Filtering** — Filter by Books, Hostel Essentials, Cycles, Study Material — resolved server-side, not in JavaScript.
-- **Paginated Results** — 9 listings per page with a "Load More" UX; backend returns `count`, `next`, `previous`, `results`.
-- **Ownership Controls** — Only listing owners can edit or delete their own listings (403 on unauthorized attempts).
-- **Cloudinary Media** — Images stored on Cloudinary CDN, not on the server filesystem, making the app deployment-safe.
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
+| | |
 |---|---|
-| Frontend | Next.js 14, TypeScript, Tailwind CSS, shadcn/ui |
-| Backend | Django 6, Django REST Framework |
-| Auth | JWT via `djangorestframework-simplejwt` |
-| Database | PostgreSQL |
-| Media Storage | Cloudinary |
-| Deployment | Vercel (frontend), Render (backend) |
+| **Frontend** | Next.js, TypeScript, Tailwind CSS |
+| **Backend** | Django 6, Django REST Framework |
+| **Real-time** | Django Channels + WebSockets (Daphne ASGI) |
+| **Auth** | JWT — `djangorestframework-simplejwt` |
+| **Database** | PostgreSQL |
+| **Media** | Cloudinary CDN |
+| **Deployed on** | Vercel (frontend) · Render (backend) |
 
 ---
 
-## Architecture
+## Features
 
-```
-commonroom/
-├── commonroom-backend/         # Django REST API
-│   ├── listings/
-│   │   ├── models.py           # Listing model (13 fields, db_index on title)
-│   │   ├── serializers.py      # DRF ModelSerializer
-│   │   ├── views.py            # listing_list (GET/POST), listing_detail (GET/PATCH/DELETE)
-│   │   ├── auth_views.py       # register, login endpoints
-│   │   └── urls.py
-│   └── commonroom_backend/
-│       ├── settings.py
-│       └── settings_production.py
-└── src/                        # Next.js frontend
-    ├── app/
-    │   ├── page.tsx            # Homepage with search, filters, pagination
-    │   ├── listing/[id]/       # Listing detail page
-    │   ├── create/             # Create listing (protected route)
-    │   └── auth/               # Login, signup
-    ├── components/
-    │   ├── Navbar.tsx
-    │   ├── Hero.tsx
-    │   └── ListingCard.tsx
-    └── lib/
-        └── api.ts              # Axios instance with JWT interceptors + token refresh
-```
+- **JWT Auth** — Register/login with 1-hour access tokens and 7-day refresh tokens. An Axios interceptor silently refreshes tokens on any 401 — users are never unexpectedly logged out.
+- **Real-time Chat** — WebSocket-based in-app messaging between buyers and sellers. REST loads message history; WebSocket handles live delivery. JWT authenticated via query string (standard Channels pattern).
+- **Server-side Search & Filtering** — Debounced queries hit the Django API; filtering uses `icontains` on a `db_index`-ed field. Never fetches all records client-side.
+- **Cloudinary Image Upload** — Images go directly to Cloudinary CDN on POST, not to the server filesystem, making the app redeploy-safe on Render's ephemeral storage.
+- **Ownership Guards** — Edit/delete endpoints return 403 if the requester isn't the listing owner. WebSocket connections reject unauthorized participants with a close code.
+- **Favorites / Wishlist** — Toggle-favorite endpoint uses `get_or_create` (no duplicate rows). Favorite IDs pre-fetched in a single query to avoid N+1 on list pages.
+- **Pagination** — 9 listings per page; backend returns `count`, `next`, `previous`, `results` following DRF conventions.
 
 ---
 
-## API Endpoints
+## API Reference
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| POST | `/api/auth/register/` | No | Create account, returns JWT tokens |
-| POST | `/api/auth/login/` | No | Login, returns JWT tokens |
-| POST | `/api/auth/token/refresh/` | No | Refresh access token |
-| GET | `/api/listings/` | No | List listings (supports `?search=&category=&page=`) |
-| POST | `/api/listings/` | Yes | Create listing with Cloudinary image upload |
-| GET | `/api/listings/<id>/` | No | Get single listing |
-| PATCH | `/api/listings/<id>/` | Yes (owner) | Update listing |
-| DELETE | `/api/listings/<id>/` | Yes (owner) | Delete listing |
+| `POST` | `/api/auth/register/` | — | Create account |
+| `POST` | `/api/auth/login/` | — | Login, returns JWT pair |
+| `POST` | `/api/auth/token/refresh/` | — | Refresh access token |
+| `GET` | `/api/listings/` | — | Browse listings (`?search=&category=&page=`) |
+| `POST` | `/api/listings/` | ✓ | Create listing + Cloudinary upload |
+| `PATCH` | `/api/listings/<id>/` | ✓ owner | Update listing |
+| `DELETE` | `/api/listings/<id>/` | ✓ owner | Delete listing |
+| `POST` | `/api/listings/<id>/favorite/` | ✓ | Toggle favorite |
+| `POST` | `/api/chat/conversations/start/` | ✓ | Get or create a conversation (idempotent) |
+| `GET` | `/api/chat/conversations/` | ✓ | List user's conversations |
+| `GET` | `/api/chat/conversations/<id>/messages/` | ✓ | Paginated message history |
+| `WS` | `ws/.../ws/chat/<id>/?token=` | ✓ JWT | Real-time message stream |
 
 ---
 
-## Local Development
+## Running Locally
 
-### Backend
-
+**Backend**
 ```bash
 cd commonroom-backend
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+venv\Scripts\activate        # Mac/Linux: source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Create a `.env` file in `commonroom-backend/`:
-
-```env
+Create `commonroom-backend/.env`:
+```
 SECRET_KEY=your_secret_key
 DEBUG=True
 DB_NAME=commonroom
@@ -99,54 +72,39 @@ DB_USER=postgres
 DB_PASSWORD=your_password
 DB_HOST=localhost
 DB_PORT=5432
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
 ```
 
 ```bash
 python manage.py migrate
-python manage.py runserver
+python manage.py runserver   # Daphne ASGI server — handles both HTTP and WS
 ```
 
-### Frontend
-
+**Frontend**
 ```bash
-cd commonroom  # Next.js root
+cd commonroom
 npm install
-```
-
-Create `.env.local`:
-
-```env
-NEXT_PUBLIC_API_URL=http://127.0.0.1:8000/api
-NEXT_PUBLIC_BACKEND_URL=http://127.0.0.1:8000
-```
-
-```bash
 npm run dev
 ```
 
 ---
 
-## Key Engineering Decisions
+## A Few Engineering Decisions Worth Mentioning
 
-**Why server-side search instead of client-side filtering?**
-Client-side filtering fetches all records on every page load. At scale this is both slow (network) and incorrect (you can't filter what you haven't fetched). Server-side filtering with `title__icontains` and a `db_index` on the title field keeps queries fast regardless of table size.
+**Why WebSocket auth via query string?**
+The browser WebSocket API doesn't support custom headers on the initial handshake. Passing the JWT as `?token=` is the standard Django Channels pattern. The token is validated and the user's participant status is checked *before* the socket is accepted — unauthorized clients get close code 4001/4003.
 
-**Why Cloudinary instead of Django's `ImageField`?**
-Render and most PaaS providers use ephemeral filesystems — files uploaded to the server are wiped on every redeploy. Cloudinary stores media on a global CDN, decoupled from the application server.
+**Why InMemoryChannelLayer (not Redis) locally?**
+For a single-server deployment, InMemoryChannelLayer works perfectly and requires zero infrastructure setup. Switching to Redis in production is a one-line config change — the consumer code doesn't change at all.
 
-**Why automatic token refresh?**
-A 1hr access token expiry with no refresh means users get logged out mid-session. The Axios response interceptor silently calls `/api/auth/token/refresh/` on any 401, updates localStorage, and retries the original request — the user never notices.
+**Why server-side search over client-side filtering?**
+Client-side filtering requires fetching the entire dataset upfront. With `title__icontains` and a `db_index`, the database does the heavy lifting and the query stays fast as the dataset grows.
+
+**Why Cloudinary over Django's `ImageField`?**
+Render (and most PaaS) use ephemeral filesystems — uploads are wiped on redeploy. Cloudinary decouples media from the server entirely.
 
 ---
 
-## Deployment
-
-| Service | URL |
-|---|---|
-| Frontend (Vercel) | https://commonroom-five.vercel.app |
-| Backend (Render) | https://commonroom-m8mc.onrender.com |
-
-> **Note:** The backend is hosted on Render's free tier and may take 30–50 seconds to cold start after inactivity.
+> The Render backend is on the free tier and may take ~30 seconds to cold-start after inactivity.
