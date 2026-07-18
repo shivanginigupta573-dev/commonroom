@@ -51,6 +51,7 @@ export default function ListingPage() {
   const [isFavorited, setIsFavorited] = useState(false);
   const [favoriting, setFavoriting] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [contacting, setContacting] = useState(false);
 
   useEffect(() => {
     // Synchronize login state on client mount
@@ -121,6 +122,28 @@ export default function ListingPage() {
       console.error("Error deleting listing:", err);
       alert("Failed to delete listing. Please try again.");
       setDeleting(false);
+    }
+  };
+
+  const handleContactSeller = async () => {
+    if (!isLoggedIn) {
+      router.push("/auth/login");
+      return;
+    }
+    if (!listing || isOwner || contacting) return;
+    setContacting(true);
+    try {
+      // Idempotent: returns existing convo ID if one already exists
+      const res = await api.post("/chat/conversations/start/", {
+        listing_id: listing.id,
+        other_user_id: listing.user,
+      });
+      router.push(`/messages?conversation_id=${res.data.id}`);
+    } catch (err) {
+      console.error("Could not start conversation", err);
+      alert("Could not open chat. Please try again.");
+    } finally {
+      setContacting(false);
     }
   };
 
@@ -291,10 +314,16 @@ export default function ListingPage() {
 
             {/* LOWER ACTIONS FOOTER BAR */}
             <div className="flex gap-3 pt-1">
-              <button className="flex-1 flex items-center justify-center gap-2 bg-[#6366F1] hover:bg-slate-900 text-white py-3.5 rounded-xl font-bold transition text-sm shadow-xs">
-                <MessageSquare size={16} strokeWidth={2.5} />
-                Contact Seller
-              </button>
+              {!isOwner && (
+                <button
+                  onClick={handleContactSeller}
+                  disabled={contacting}
+                  className="flex-1 flex items-center justify-center gap-2 bg-[#6366F1] hover:bg-slate-900 text-white py-3.5 rounded-xl font-bold transition text-sm shadow-xs disabled:opacity-60"
+                >
+                  <MessageSquare size={16} strokeWidth={2.5} />
+                  {contacting ? "Opening chat…" : "Contact Seller"}
+                </button>
+              )}
               
               {!isOwner && (
                 <button

@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.pagination import PageNumberPagination
-from .models import Listing, Favorite
+from .models import Listing, Favorite, Conversation, Message
 from .serializers import ListingSerializer, FavoriteSerializer
 
 
@@ -210,3 +210,125 @@ def my_listings(request):
         context={'request': request, 'favorited_ids': favorited_ids}
     )
     return paginator.get_paginated_response(serializer.data)
+
+
+# ------------------------------------------------------------------ #
+#  Chat REST endpoints (WebSocket handles real-time; REST handles      #
+#  loading history and starting/finding conversations)                 #
+# ------------------------------------------------------------------ #
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def start_or_get_conversation(request):
+    """
+    POST /api/chat/conversations/
+    Body: { "listing_id": 5, "other_user_id": 3 }
+
+    WHY idempotent: clicking "Contact Seller" multiple times must not create
+    duplicate conversation threads. We use get_or_create logic with participant
+    filtering to find an existing convo first.
+    """
+    listing_id = request.data.get('listing_id')
+    other_user_id = request.data.get('other_user_id')
+
+    if not listing_id or not other_user_id:
+        return Response({'error': 'listing_id and other_user_id are required'}, status=400)
+
+    try:
+        other_user = User.objects.get(id=other_user_id)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
+
+    # Find an existing conversation between these two users about this listing
+    existing = Conversation.objects.filter(
+        listing_id=listing_id,
+        participants=request.user
+    ).filter(participants=other_user).first()
+
+    if existing:
+        return Response({'id': existing.id, 'created': False})
+
+    # None exists — create one
+    convo = Conversation.objects.create(listing_id=listing_id)
+    convo.participants.add(request.user, other_user)
+    return Response({'id': convo.id, 'created': True}, status=201)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_conversations(request):
+    """
+    GET /api/chat/conversations/
+    Returns all conversations the current user is part of, ordered by most recent activity.
+    Each entry includes the other participant's name and listing title for the sidebar.
+    """
+    from django.contrib.auth.models import User as DjangoUser
+
+    conversations = Conversation.objects.filter(
+        participants=request.user
+    ).prefetch_related('participants', 'messages').select_related('listing')
+
+    result = []
+    for convo in conversations:
+        other = convo.participants.exclude(id=request.user.id).first()
+        last_msg = convo.messages.last()
+        unread_count = convo.messages.filter(is_read=False).exclude(sender=request.user).count()
+        result.append({
+            'id': convo.id,
+            'other_user': {'id': other.id, 'username': other.username} if other else None,
+            'listing': {
+                'id': convo.listing.id,
+                'title': convo.listing.title,
+                'image': convo.listing.image,
+            } if convo.listing else None,
+            'last_message': {
+                'text': last_msg.text,
+                'timestamp': last_msg.timestamp.isoformat(),
+                'sender_id': last_msg.sender_id,
+            } if last_msg else None,
+            'unread_count': unread_count,
+            'updated_at': convo.updated_at.isoformat(),
+        })
+
+    return Response(result)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_messages(request, conversation_id):
+    """
+    GET /api/chat/conversations/<id>/messages/
+    Returns paginated message history for a conversation.
+    Guards against accessing conversations you're not part of.
+    """
+    # Security check: ensure requesting user is a participant
+    try:
+        convo = Conversation.objects.get(id=conversation_id, participants=request.user)
+    except Conversation.DoesNotExist:
+        return Response({'error': 'Conversation not found'}, status=404)
+
+    # Mark all messages from the other user as read now that the user is viewing
+    Message.objects.filter(
+        conversation=convo
+    ).exclude(sender=request.user).update(is_read=True)
+
+    messages = convo.messages.select_related('sender')
+
+    paginator = PageNumberPagination()
+    paginator.page_size = 50
+    paginated = paginator.paginate_queryset(messages, request)
+
+    data = [{
+        'id': m.id,
+        'text': m.text,
+        'sender_id': m.sender_id,
+        'sender_username': m.sender.username,
+        'timestamp': m.timestamp.isoformat(),
+        'is_read': m.is_read,
+    } for m in paginated]
+
+    return paginator.get_paginated_response(data)
+
+
+# Re-import User at module level for the chat views
+from django.contrib.auth.models import User

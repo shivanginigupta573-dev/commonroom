@@ -79,3 +79,50 @@ class Favorite(models.Model):
 
     def __str__(self):
         return f"{self.user.username} ♥ {self.listing.title}"
+
+
+class Conversation(models.Model):
+    """
+    A thread between exactly two users about a listing.
+    Using ManyToMany with a unique_together constraint keeps it clean.
+    """
+    participants = models.ManyToManyField(User, related_name='conversations')
+    listing = models.ForeignKey(
+        Listing,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='conversations'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)  # updated on every new message
+
+    class Meta:
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        users = ', '.join(u.username for u in self.participants.all())
+        return f"Conversation [{users}]"
+
+
+class Message(models.Model):
+    """A single message inside a Conversation."""
+    conversation = models.ForeignKey(
+        Conversation,
+        on_delete=models.CASCADE,
+        related_name='messages'
+    )
+    sender = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='sent_messages'
+    )
+    text = models.TextField()
+    is_read = models.BooleanField(default=False)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['timestamp']
+
+    def __str__(self):
+        return f"{self.sender.username}: {self.text[:40]}"

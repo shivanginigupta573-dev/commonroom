@@ -33,6 +33,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',                   # Must be first — takes over runserver for ASGI
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,6 +43,7 @@ INSTALLED_APPS = [
     # Third party
     'rest_framework',
     'corsheaders',
+    'channels',
     # Local
     'listings',
 ]
@@ -75,6 +77,16 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'commonroom_backend.wsgi.application'
+ASGI_APPLICATION = 'commonroom_backend.asgi.application'
+
+# Channel Layer — InMemoryChannelLayer for local dev.
+# WHY: Django Channels needs a backing store to route messages between consumers.
+# For production, replace with RedisChannelLayer (one config change, no code change).
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    }
+}
 
 
 # Database

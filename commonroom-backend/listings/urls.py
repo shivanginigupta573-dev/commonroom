@@ -21,4 +21,9 @@ urlpatterns = [
     # User-specific
     path('users/me/favorites/', views.my_favorites, name='my-favorites'),
     path('users/me/listings/', views.my_listings, name='my-listings'),
+
+    # Chat (REST — for history & starting conversations)
+    path('chat/conversations/', views.list_conversations, name='list-conversations'),
+    path('chat/conversations/start/', views.start_or_get_conversation, name='start-conversation'),
+    path('chat/conversations/<int:conversation_id>/messages/', views.list_messages, name='list-messages'),
 ]
